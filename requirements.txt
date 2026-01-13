@@ -1,0 +1,43 @@
+# Requirements for Streamlit Cloud Deployment
+# Generated from pyproject.toml
+# Python version required: >=3.11,<3.13
+
+# Audio Processing
+assemblyai>=0.44.3
+soundfile>=0.12.1
+yt-dlp>=2024.12.13
+
+# AI/ML Agents
+crewai>=0.193.2
+crewai-tools>=0.73.1
+
+# Vector Database & Embeddings
+pymilvus[milvus-lite]>=2.6.2
+fastembed>=0.7.3
+
+# Web Scraping
+firecrawl-py>=4.3.6
+
+# Development Tools
+ipykernel>=6.30.1
+
+# Text-to-Speech
+kokoro>=0.9.4
+
+# Document Processing
+pymupdf>=1.26.4
+
+# Configuration
+python-dotenv>=1.1.1
+
+# Web Framework
+streamlit>=1.28.0
+
+# Machine Learning
+torch>=2.0.0
+torchvision>=0.15.0
+transformers>=4.30.0
+
+# Memory & Knowledge Graph
+zep-cloud>=3.4.3
+zep-crewai>=1.1.1

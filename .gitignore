@@ -1,0 +1,114 @@
+# Environment variables (CRITICAL - Contains API keys)
+.env
+.env.local
+.env.*.local
+
+# Python cache files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Python build artifacts
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+env.bak/
+venv.bak/
+
+# IDE-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.sublime-project
+*.sublime-workspace
+
+# Testing
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+*.cover
+.cache
+nosetests.xml
+coverage.xml
+*.log
+
+# Jupyter Notebook
+.ipynb_checkpoints
+*/.ipynb_checkpoints/*
+
+# Output directories (Generated content)
+outputs/
+outputs/podcast_audio/
+podcast_output/
+temp/
+.tmp/
+
+# Data files (Large media files)
+data/*.wav
+data/*.mp3
+data/*.mp4
+data/*.avi
+data/*.pdf
+data/*.zip
+data/*.tar.gz
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+milvus_lite_*.db
+
+# Temporary files
+tmpclaude-*.cwd
+*.tmp
+*.temp
+*.bak
+*.swp
+*~.nib
+
+# Model files (if downloaded locally)
+models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Streamlit
+.streamlit/secrets.toml
+
+# OS-specific
+Thumbs.db
+Desktop.ini
+
+# Distribution / packaging
+.Python

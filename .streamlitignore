@@ -1,0 +1,111 @@
+# .streamlitignore
+# Files and directories to exclude when deploying to Streamlit Cloud
+# This reduces deployment size and upload time
+
+# Environment and secrets
+.env
+.env.*
+.streamlit/secrets.toml
+
+# Python virtual environments
+venv/
+.venv/
+ENV/
+env/
+
+# Python cache and build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+.eggs/
+build/
+dist/
+develop-eggs/
+downloads/
+eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+
+# Git files
+.git/
+.gitignore
+.gitattributes
+
+# IDE files
+.vscode/
+.idea/
+.vs/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Data and output directories
+data/
+outputs/
+podcast_output/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+milvus_lite_*.db
+
+# Testing
+tests/
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.cache
+
+# Documentation (if not needed in deployment)
+docs/
+notebooks/
+*.ipynb
+.ipynb_checkpoints
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+tmpclaude-*.cwd
+temp/
+.tmp/
+
+# Logs
+*.log
+logs/
+
+# Model files (if downloaded locally)
+models/
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+
+# Large media files
+*.wav
+*.mp3
+*.mp4
+*.avi
+*.mov

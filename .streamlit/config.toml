@@ -1,0 +1,48 @@
+# Streamlit Configuration for Cloud Deployment
+# This file configures how your Streamlit app runs
+
+[server]
+# Run in headless mode (required for cloud deployment)
+headless = true
+
+# Port configuration
+port = 8501
+
+# Maximum file upload size in MB
+# Allows large PDF and audio files
+maxUploadSize = 200
+
+# CORS and security settings
+enableCORS = false
+enableXsrfProtection = true
+
+[browser]
+# Disable usage statistics collection
+gatherUsageStats = false
+
+[theme]
+# Custom theme colors
+primaryColor = "#FF6B6B"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "sans serif"
+
+[logger]
+# Logging level for production
+level = "info"
+
+[client]
+# Hide detailed error messages in production
+showErrorDetails = false
+
+# Toolbar mode
+toolbarMode = "minimal"
+
+[runner]
+# Automatically rerun on file changes (for development)
+# Set to false in production if needed
+magicEnabled = true
+
+# Faster reruns
+fastReruns = true
