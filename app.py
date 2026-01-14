@@ -13,85 +13,6 @@ load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def create_interactive_citations(response_text: str, sources_used: List[Dict[str, Any]]) -> str:
-    import re
-    
-    logger.info(f"Processing interactive citations for {len(sources_used)} sources")
-
-    citation_map = {}
-    for source in sources_used:
-        ref = source.get('reference', '')
-        if ref:
-            match = re.search(r'\[(\d+)\]', ref)
-            if match:
-                num = match.group(1)
-                citation_map[num] = source
-    
-    def replace_citation(match):
-        """Replace citation number with interactive element"""
-        full_match = match.group(0)  # e.g., '[1]'
-        num = match.group(1)  # e.g., '1'
-        
-        if num in citation_map:
-            source = citation_map[num]
-            chunk_content = "Content not available"
-            source_info = f"Source: {source.get('source_file', 'Unknown')}"
-            
-            if source.get('page_number'):
-                source_info += f", Page: {source['page_number']}"
-            
-            try:
-                if st.session_state.pipeline and st.session_state.pipeline['vector_db']:
-                    chunk_id = source.get('chunk_id')
-                    logger.info(f"Processing citation {num} with chunk_id: {chunk_id}")
-                    
-                    if chunk_id:
-                        chunk_data = st.session_state.pipeline['vector_db'].get_chunk_by_id(chunk_id)
-                        logger.info(f"Retrieved chunk data: {chunk_data is not None}")
-                        
-                        if chunk_data and chunk_data.get('content'):
-                            chunk_content = chunk_data['content']
-                            logger.info(f"Got chunk content: {len(chunk_content)} characters")
-                            if len(chunk_content) > 300:
-                                chunk_content = chunk_content[:300] + "..."
-                        else:
-                            chunk_content = "Chunk content not available"
-                            logger.warning(f"Chunk data missing or no content: {chunk_data}")
-                    else:
-                        chunk_content = "No chunk ID provided"
-                        logger.warning(f"No chunk_id in source: {source}")
-                else:
-                    chunk_content = "Vector database not available"
-                    logger.warning("Pipeline or vector_db not available")
-            except Exception as e:
-                logger.error(f"Error retrieving chunk content for citation {num}: {e}")
-                chunk_content = f"Error retrieving chunk content: {str(e)}"
-            
-            chunk_content_escaped = (chunk_content
-                                    .replace('<', '&lt;')
-                                    .replace('>', '&gt;')
-                                    .replace('\n', '<br>')
-                                    .replace('"', '&quot;'))
-            source_info_escaped = (source_info
-                                 .replace('<', '&lt;')
-                                 .replace('>', '&gt;')
-                                 .replace('"', '&quot;'))
-            
-            return f'''<span class="citation-number">
-                {num}
-                <div class="citation-tooltip">
-                    <div class="tooltip-source">{source_info_escaped}</div>
-                    <div class="tooltip-content">{chunk_content_escaped}</div>
-                </div>
-            </span>'''
-        else:
-            return full_match
-    
-    # Replace all citation patterns [1], [2], etc.
-    interactive_text = re.sub(r'\[(\d+)\]', replace_citation, response_text)
-    
-    return interactive_text
-
 from src.document_processing.doc_processor import DocumentProcessor
 from src.embeddings.embedding_generator import EmbeddingGenerator
 from src.vector_database.milvus_vector_db import MilvusVectorDB
@@ -159,79 +80,6 @@ st.markdown("""
         color: #90cdf4;
         margin: 2px;
         display: inline-block;
-    }
-    
-    /* Interactive citation styling */
-    .citation-number {
-        background: #4299e1;
-        color: white;
-        padding: 2px 6px;
-        border-radius: 4px;
-        font-size: 11px;
-        font-weight: bold;
-        cursor: pointer;
-        display: inline-block;
-        margin: 0 2px;
-        position: relative;
-        transition: all 0.2s ease;
-    }
-    
-    .citation-number:hover {
-        background: #3182ce;
-        transform: scale(1.1);
-    }
-    
-    /* Tooltip styling */
-    .citation-tooltip {
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #2d3748;
-        color: #e2e8f0;
-        padding: 12px;
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        border: 1px solid #4a5568;
-        max-width: 400px;
-        width: max-content;
-        z-index: 1000;
-        font-size: 12px;
-        line-height: 1.4;
-        margin-bottom: 8px;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 0.3s ease, visibility 0.3s ease;
-        pointer-events: none;
-    }
-    
-    .citation-number:hover .citation-tooltip {
-        opacity: 1;
-        visibility: visible;
-    }
-    
-    /* Tooltip arrow */
-    .citation-tooltip::after {
-        content: '';
-        position: absolute;
-        top: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        border: 6px solid transparent;
-        border-top-color: #2d3748;
-    }
-    
-    .tooltip-source {
-        font-weight: bold;
-        color: #4299e1;
-        margin-bottom: 6px;
-        font-size: 11px;
-    }
-    
-    .tooltip-content {
-        max-height: 200px;
-        overflow-y: auto;
-        text-align: left;
     }
     
     .upload-area {
@@ -325,7 +173,6 @@ def initialize_pipeline():
                 'podcast_tts_generator': podcast_tts_generator,
                 'embedding_generator': embedding_generator,
                 'vector_db': vector_db,
-                # Removed: RAG, memory, audio_transcriber, youtube_transcriber, web_scraper
             }
             
             st.session_state.pipeline_initialized = True
@@ -439,9 +286,6 @@ def process_text(text_content):
 def render_sources_sidebar():
     with st.sidebar:
         st.markdown('<div class="main-header">📚 Sources</div>', unsafe_allow_html=True)
-        
-        # if st.button("➕ Add", use_container_width=True):
-        #     st.session_state.show_source_dialog = True
         
         # Display sources
         if st.session_state.sources:
