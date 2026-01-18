@@ -4,12 +4,13 @@ import soundfile as sf
 from typing import List, Dict, Any
 from pathlib import Path
 from dataclasses import dataclass
+import wave
 
 try:
-    from kokoro import KPipeline
+    from piper.voice import PiperVoice
 except ImportError:
-    print("Kokoro not installed. Install with: pip install kokoro>=0.9.4")
-    KPipeline = None
+    print("piper-tts not installed. Install with: pip install piper-tts")
+    PiperVoice = None
 
 from src.podcast.script_generator import PodcastScript
 
@@ -28,19 +29,24 @@ class AudioSegment:
 
 
 class PodcastTTSGenerator:
-    def __init__(self, lang_code: str = 'a', sample_rate: int = 24000):
-        if KPipeline is None:
-            raise ImportError("Kokoro TTS not available. Install with: pip install kokoro>=0.9.4 soundfile")
+    def __init__(self, sample_rate: int = 22050):
+        if PiperVoice is None:
+            raise ImportError("piper-tts not available. Install with: pip install piper-tts")
+
+        voice_dir = 'src/podcast/voices'
+        female_voice_path = os.path.join(voice_dir, 'en_US-ljspeech-medium.onnx')
+        male_voice_path = os.path.join(voice_dir, 'en_US-lessac-medium.onnx')
         
-        self.sample_rate = sample_rate
-        self.pipeline = KPipeline(lang_code=lang_code)
-        
+        if not os.path.exists(female_voice_path) or not os.path.exists(male_voice_path):
+            raise FileNotFoundError("Voice models not found. Please download them first.")
+
         self.speaker_voices = {
-            "Speaker 1": "af_heart",  # Female voice
-            "Speaker 2": "am_liam"    # Male voice
+            "Speaker 1": PiperVoice.from_onnx(female_voice_path),
+            "Speaker 2": PiperVoice.from_onnx(male_voice_path)
         }
         
-        logger.info(f"Kokoro TTS initialized with lang_code='{lang_code}', sample_rate={sample_rate}")
+        self.sample_rate = sample_rate
+        logger.info(f"Piper TTS initialized with sample_rate={sample_rate}")
     
     def generate_podcast_audio(
         self, 
@@ -63,11 +69,13 @@ class PodcastTTSGenerator:
             logger.info(f"Processing segment {i+1}/{podcast_script.total_lines}: {speaker}")
             
             try:
-                segment_audio = self._generate_single_segment(speaker, dialogue)
                 segment_filename = f"segment_{i+1:03d}_{speaker.replace(' ', '_').lower()}.wav"
                 segment_path = os.path.join(output_dir, segment_filename)
+
+                self._generate_single_segment(speaker, dialogue, segment_path)
+
+                segment_audio, sr = sf.read(segment_path, dtype='float32')
                 
-                sf.write(segment_path, segment_audio, self.sample_rate)
                 output_files.append(segment_path)
                 
                 if combine_audio:
@@ -93,21 +101,15 @@ class PodcastTTSGenerator:
         logger.info(f"Podcast generation complete! Generated {len(output_files)} files")
         return output_files
     
-    def _generate_single_segment(self, speaker: str, text: str) -> Any:
-        voice = self.speaker_voices.get(speaker, "af_heart")
+    def _generate_single_segment(self, speaker: str, text: str, output_path: str):
+        voice = self.speaker_voices.get(speaker)
+        if not voice:
+            raise ValueError(f"No voice found for speaker: {speaker}")
+
         clean_text = self._clean_text_for_tts(text)
 
-        generator = self.pipeline(clean_text, voice=voice)
-        
-        combined_audio = []
-        for i, (gs, ps, audio) in enumerate(generator):
-            combined_audio.append(audio)
-        
-        if len(combined_audio) == 1:
-            return combined_audio[0]
-        else:
-            import numpy as np
-            return np.concatenate(combined_audio)
+        with wave.open(output_path, 'wb') as wav_file:
+            voice.synthesize(clean_text, wav_file)
     
     def _clean_text_for_tts(self, text: str) -> str:
         import re
@@ -115,11 +117,11 @@ class PodcastTTSGenerator:
         clean_text = text.strip()
 
         # Remove laughter and other markers (but keep the natural flow)
-        clean_text = re.sub(r'\[laughs?\]', '', clean_text)
-        clean_text = re.sub(r'\[chuckles?\]', '', clean_text)
-        clean_text = re.sub(r'\[both laugh\]', '', clean_text)
-        clean_text = re.sub(r'\[giggles?\]', '', clean_text)
-        clean_text = re.sub(r'\[.*?\]', '', clean_text)  # Remove any other [markers]
+        clean_text = re.sub(r'[[laughs?]]', '', clean_text)
+        clean_text = re.sub(r'[[chuckles?]]', '', clean_text)
+        clean_text = re.sub(r'[[both laugh]]', '', clean_text)
+        clean_text = re.sub(r'[[giggles?]]', '', clean_text)
+        clean_text = re.sub(r'[[.*?]]', '', clean_text)  # Remove any other [markers]
 
         # Remove standalone filler sounds that sound terrible when spoken by TTS
         # These are removed when they appear as standalone words or at the start of sentences
@@ -226,8 +228,7 @@ if __name__ == "__main__":
         
         print("\nPodcast TTS test completed successfully!")
         
-    except ImportError as e:
-        print(f"Import error: {e}")
-        print("Please install Kokoro TTS: pip install kokoro>=0.9.4")
-    except Exception as e:
+    except (ImportError, ValueError) as e:
         print(f"Error: {e}")
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}")

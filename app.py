@@ -148,7 +148,10 @@ def initialize_pipeline():
                 podcast_tts_generator = PodcastTTSGenerator()
                 logger.info("PodcastTTSGenerator initialized successfully")
             except ImportError:
-                logger.warning("Kokoro TTS not available. Podcast audio generation will be disabled.")
+                logger.warning("piper-tts not available. Podcast audio generation will be disabled.")
+                podcast_tts_generator = None
+            except FileNotFoundError:
+                logger.warning("Voice models not found. Podcast audio generation will be disabled.")
                 podcast_tts_generator = None
             except Exception as e:
                 logger.error(f"Error initializing TTS: {e}")

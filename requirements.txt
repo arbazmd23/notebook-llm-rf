@@ -10,13 +10,10 @@ pymilvus[milvus-lite]>=2.6.2
 fastembed>=0.7.3
 
 # Text-to-Speech (Optional - remove if not needed)
-kokoro>=0.9.4
+piper-tts>=0.0.2
 
 # Configuration
 python-dotenv>=1.1.1
 
 # Web Framework
 streamlit>=1.28.0
-
-# OpenAI API (for podcast script generation)
-openai>=1.0.0
