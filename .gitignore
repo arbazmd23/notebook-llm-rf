@@ -103,6 +103,11 @@ models/
 *.ckpt
 *.safetensors
 
+# Voice models (no longer needed with OpenAI TTS)
+src/podcast/voices/
+*.onnx
+*.onnx.json
+
 # Streamlit
 .streamlit/secrets.toml
 

@@ -9,11 +9,13 @@ pymupdf>=1.26.4
 pymilvus[milvus-lite]>=2.6.2
 fastembed>=0.7.3
 
-# Text-to-Speech (Optional - remove if not needed)
-piper-tts>=0.0.2
+# Text-to-Speech via OpenAI API
+openai>=1.12.0
+soundfile>=0.12.1
 
 # Configuration
 python-dotenv>=1.1.1
 
 # Web Framework
 streamlit>=1.28.0
+

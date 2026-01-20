@@ -3,7 +3,7 @@ import json
 from typing import List, Dict, Any
 from dataclasses import dataclass
 
-from crewai import LLM
+from openai import OpenAI
 from src.document_processing.doc_processor import DocumentProcessor
 
 logging.basicConfig(level=logging.INFO)
@@ -34,11 +34,10 @@ class PodcastScript:
 
 class PodcastScriptGenerator:
     def __init__(self, openai_api_key: str, model_name: str = "gpt-4o-mini"):
-        self.llm = LLM(
-            model=f"openai/{model_name}",
-            temperature=0.9,  # Higher temperature for more creative, natural dialogue
-            max_tokens=8000  # Increased for longer podcast scripts
-        )
+        self.client = OpenAI(api_key=openai_api_key)
+        self.model_name = model_name
+        self.temperature = 0.9  # Higher temperature for more creative, natural dialogue
+        self.max_tokens = 8000  # Increased for longer podcast scripts
         self.doc_processor = DocumentProcessor()
         logger.info(f"Podcast script generator initialized with {model_name}")
     
@@ -320,7 +319,19 @@ DOCUMENT CONTENT:
 Generate an engaging {target_duration} podcast script now:"""
         
         try:
-            response = self.llm.call(prompt)
+            # Call OpenAI API
+            completion = self.client.chat.completions.create(
+                model=self.model_name,
+                messages=[
+                    {"role": "system", "content": "You are a creative podcast script writer who generates natural, engaging dialogue between two speakers."},
+                    {"role": "user", "content": prompt}
+                ],
+                temperature=self.temperature,
+                max_tokens=self.max_tokens,
+                response_format={"type": "json_object"}
+            )
+
+            response = completion.choices[0].message.content
             script_data = json.loads(response)
             
             if 'script' not in script_data or not isinstance(script_data['script'], list):
