@@ -582,13 +582,18 @@ def render_studio_tab():
         with col1:
             podcast_style = st.selectbox(
                 "Podcast Style",
-                ["Conversational", "Interview", "Debate", "Educational"]
+                ["Conversational", "Educational", "Interview", "Debate", "Research"],
+                help="Choose the tone and format of your podcast"
             )
         with col2:
             podcast_length = st.selectbox(
                 "Duration",
                 ["5 minutes", "10 minutes", "15 minutes"]
             )
+
+        # Add help text for Research option
+        if podcast_style == "Research":
+            st.info("📚 Research style: Structured academic discussion with intro, methodology, results, analysis, and implications. Best for research papers.")
 
         if st.button("🎙️ Generate Podcast", use_container_width=True):
             if selected_source:

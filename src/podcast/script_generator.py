@@ -1,5 +1,6 @@
 import logging
 import json
+import re
 from typing import List, Dict, Any
 from dataclasses import dataclass
 
@@ -36,8 +37,8 @@ class PodcastScriptGenerator:
     def __init__(self, openai_api_key: str, model_name: str = "gpt-4o-mini"):
         self.client = OpenAI(api_key=openai_api_key)
         self.model_name = model_name
-        self.temperature = 0.9  # Higher temperature for more creative, natural dialogue
-        self.max_tokens = 8000  # Increased for longer podcast scripts
+        self.base_temperature = 0.9  # Higher temperature for more creative, natural dialogue
+        self.max_tokens = 12000  # Increased for 15-minute podcasts (2400 words ≈ 3200 tokens)
         self.doc_processor = DocumentProcessor()
         logger.info(f"Podcast script generator initialized with {model_name}")
     
@@ -234,31 +235,136 @@ NATURAL DEBATE FLOW:
 - Show genuine interest in the other perspective
 - React authentically to good points
 
-CRITICAL: DO NOT use filler words like "um", "uh", "ah", "er" - they sound terrible when spoken by TTS. Use phrases like "you know", "I mean", "actually", "basically" instead. Keep it energetic but collaborative. They're exploring ideas together, not trying to win."""
+CRITICAL: DO NOT use filler words like "um", "uh", "ah", "er" - they sound terrible when spoken by TTS. Use phrases like "you know", "I mean", "actually", "basically" instead. Keep it energetic but collaborative. They're exploring ideas together, not trying to win.""",
+
+            "research": """Create a thoughtful, in-depth discussion between two research enthusiasts analyzing an academic paper.
+
+SPEAKER DYNAMICS:
+- Speaker 1 (Lead): Guides the conversation, asks probing questions, connects ideas to broader context
+- Speaker 2 (Analyst): Provides detailed explanations, discusses methodology, adds technical depth
+
+RESEARCH PODCAST STRUCTURE (Follow this order):
+
+1. INTRODUCTION (10% of exchanges):
+   - Paper title, authors, publication venue/year
+   - High-level research question and motivation
+   - Why this paper matters to the field
+
+2. BACKGROUND & CONTEXT (15% of exchanges):
+   - Prior work and state of the field
+   - Gap or problem this paper addresses
+   - Novel approach or key innovation
+
+3. METHODOLOGY (25% of exchanges):
+   - Research design and experimental approach
+   - Data collection methods and sample size
+   - Key technical details and architectural decisions
+   - Important parameters or configurations
+   - Why these methods were chosen over alternatives
+
+4. RESULTS & FINDINGS (25% of exchanges):
+   - Main results with specific numbers, metrics, percentages
+   - Statistical significance and effect sizes
+   - Comparison to baselines or prior work
+   - Key figures, tables, or visualizations discussed
+   - Unexpected findings or interesting patterns
+
+5. CRITICAL ANALYSIS (15% of exchanges):
+   - Strengths of the approach
+   - Limitations and caveats (sample size, generalizability, assumptions)
+   - Potential confounding factors
+   - Alternative explanations or interpretations
+   - What the data does NOT show
+
+6. IMPLICATIONS & FUTURE (8% of exchanges):
+   - Practical applications and real-world impact
+   - Theoretical contributions to the field
+   - Open questions and future research directions
+   - How this changes our understanding
+
+7. CLOSING (2% of exchanges):
+   - Key takeaways (2-3 main points)
+   - Final thoughts
+   - Where to learn more
+
+TONE & LANGUAGE:
+- Professional but accessible - like explaining to an interested colleague
+- Use technical terminology with clear explanations
+- Balance depth with clarity
+- Thoughtful, measured pacing (not rushed or overly excited)
+- Show genuine intellectual curiosity
+- Respect for the research and researchers
+
+NATURAL RESEARCH DISCUSSION PHRASES:
+- "What's particularly interesting here is..."
+- "The key finding is..."
+- "Let me walk through the methodology..."
+- "Compared to prior work by [author]..."
+- "An important limitation to note..."
+- "The data suggests..."
+- "One potential criticism might be..."
+- "Building on this finding..."
+- "What this means for the field..."
+- "To put this in context..."
+- "The results show..."
+- "Interestingly, they found..."
+
+CRITICAL THINKING:
+- Question assumptions explicitly
+- Discuss trade-offs in methodology
+- Compare to alternative approaches
+- Consider multiple interpretations of results
+- Note what's missing or not addressed
+- Distinguish correlation from causation
+- Discuss statistical vs. practical significance
+
+TECHNICAL DEPTH:
+- Include specific numbers, metrics, effect sizes
+- Mention sample sizes and statistical tests
+- Discuss model architectures or algorithms
+- Reference specific equations or techniques (when relevant)
+- Compare performance metrics (accuracy, F1, AUC, etc.)
+- Explain technical terms the first time used
+
+AVOID (Not appropriate for research):
+- Over-enthusiasm: "Oh wow!", "No way!", "So cool!"
+- Excessive hedging: "kind of", "sort of", "basically" (use sparingly)
+- Gossipy or casual tone
+- Oversimplification that sacrifices accuracy
+- Skipping methodology details
+- Making claims beyond what data supports
+
+EXAMPLE OPENING:
+"Welcome to today's deep dive. We're examining a recent paper published in [Journal] by [Authors] on [Topic]. The central question they're addressing is [research question], which is important because [significance]."
+
+NOT THIS:
+"Okay, so today we're diving into this really cool paper! It's so fascinating and honestly? I'm kind of blown away!"
+
+This should sound like Lex Fridman, Huberman Lab, or TWiML AI - professional research discussion that's engaging without sacrificing rigor."""
         }
-        
+
         style_instruction = style_prompts.get(podcast_style, style_prompts["conversational"])
     
         duration_guidelines = {
-            "5 minutes": """Target: 40-50 dialogue exchanges (back-and-forth turns between speakers).
-- Average speaking pace: ~150 words per minute
-- Total target: ~750-800 words across all dialogue
+            "5 minutes": """Target: 28-32 dialogue exchanges (back-and-forth turns between speakers).
+- Average speaking pace: ~155 words per minute
+- Total target: ~775-800 words across all dialogue
 - Focus on 3-4 main points with clear explanations
-- Each speaker turn should be 2-4 sentences (15-40 words)
+- Each speaker turn should be 3-4 sentences (25-30 words)
 - Cover the topic thoroughly but keep explanations concise""",
 
-            "10 minutes": """Target: 80-100 dialogue exchanges (back-and-forth turns between speakers).
-- Average speaking pace: ~150 words per minute
-- Total target: ~1500-1600 words across all dialogue
+            "10 minutes": """Target: 55-60 dialogue exchanges (back-and-forth turns between speakers).
+- Average speaking pace: ~155 words per minute
+- Total target: ~1550-1600 words across all dialogue
 - Cover 5-7 key topics with detailed explanations and examples
-- Each speaker turn should be 2-5 sentences (15-50 words)
+- Each speaker turn should be 3-5 sentences (25-35 words)
 - Include analogies, examples, and deeper exploration of concepts""",
 
-            "15 minutes": """Target: 120-150 dialogue exchanges (back-and-forth turns between speakers).
-- Average speaking pace: ~150 words per minute
-- Total target: ~2250-2400 words across all dialogue
+            "15 minutes": """Target: 82-90 dialogue exchanges (back-and-forth turns between speakers).
+- Average speaking pace: ~155 words per minute
+- Total target: ~2325-2400 words across all dialogue
 - Provide comprehensive coverage of 7-10 topics with extensive discussions
-- Each speaker turn should be 2-6 sentences (15-60 words)
+- Each speaker turn should be 3-6 sentences (25-35 words)
 - Include multiple examples, analogies, tangents, and in-depth analysis"""
         }
         
@@ -287,6 +393,8 @@ CONVERSATION RULES FOR ULTRA-NATURAL DIALOGUE:
 12. Avoid overly formal or academic language - keep it casual and relatable
 13. Self-correct naturally: "So basically, or wait, actually...", "I mean, not exactly but..."
 14. MEET THE TARGET LENGTH: Generate {target_duration} worth of dialogue - check the duration guidelines above!
+15. WORD COUNT IS CRITICAL: You need the target word count specified above. Count as you write!
+16. Better to be 5% over than 5% under the word count - if in doubt, add more dialogue!
 
 CRITICAL: This should sound like two friends excitedly discussing something they find interesting, NOT like reading from a script!
 
@@ -319,25 +427,56 @@ DOCUMENT CONTENT:
 Generate an engaging {target_duration} podcast script now:"""
         
         try:
+            # Adjust system prompt based on podcast style
+            system_content = "You are a creative podcast script writer who generates natural, engaging dialogue between two speakers."
+
+            if podcast_style == "research":
+                system_content = """You are an expert research podcast script writer who creates engaging yet rigorous
+discussions of academic papers. Your scripts balance technical accuracy with accessibility, following the
+structure and tone of top research podcasts like Lex Fridman, Huberman Lab, and TWiML AI. You ensure
+proper coverage of methodology, results, limitations, and implications while maintaining an intellectually
+curious and thoughtful tone. You always include specific data points, metrics, and technical details."""
+
+            # Adjust temperature based on style - research needs more consistency
+            temperature = 0.7 if podcast_style == "research" else self.base_temperature
+
             # Call OpenAI API
             completion = self.client.chat.completions.create(
                 model=self.model_name,
                 messages=[
-                    {"role": "system", "content": "You are a creative podcast script writer who generates natural, engaging dialogue between two speakers."},
+                    {"role": "system", "content": system_content},
                     {"role": "user", "content": prompt}
                 ],
-                temperature=self.temperature,
+                temperature=temperature,
                 max_tokens=self.max_tokens,
                 response_format={"type": "json_object"}
             )
 
             response = completion.choices[0].message.content
             script_data = json.loads(response)
-            
+
             if 'script' not in script_data or not isinstance(script_data['script'], list):
                 raise ValueError("Invalid script format returned by LLM")
-            
+
             validated_script = self._validate_and_clean_script(script_data['script'])
+
+            # Validate word count
+            word_count = self._count_words_in_script(validated_script)
+            word_targets = {
+                "5 minutes": (775, 800),
+                "10 minutes": (1550, 1600),
+                "15 minutes": (2325, 2400)
+            }
+            min_words, max_words = word_targets.get(target_duration, (1550, 1600))
+
+            logger.info(f"Generated {word_count} words (target: {min_words}-{max_words})")
+
+            if word_count < min_words * 0.95:  # Allow 5% tolerance
+                logger.warning(f"Script undershoots target by {min_words - word_count} words")
+
+            # Validate research content if style is research
+            if podcast_style == "research":
+                self._validate_research_content(validated_script)
             
             return {'script': validated_script}
             
@@ -390,8 +529,35 @@ Generate an engaging {target_duration} podcast script now:"""
         
         if len(cleaned_script) < 2:
             raise ValueError("Generated script is too short or invalid")
-        
+
         return cleaned_script
+
+    def _count_words_in_script(self, script: List[Dict[str, str]]) -> int:
+        """Count total words in generated script"""
+        total_words = 0
+        for line_dict in script:
+            dialogue = list(line_dict.values())[0]
+            total_words += len(dialogue.split())
+        return total_words
+
+    def _validate_research_content(self, script: List[Dict[str, str]]) -> Dict[str, bool]:
+        """Validate that research podcast covers key sections"""
+        script_text = " ".join([list(item.values())[0] for item in script]).lower()
+
+        checks = {
+            'has_intro': any(word in script_text for word in ['paper', 'study', 'research', 'authors', 'published']),
+            'has_methodology': any(word in script_text for word in ['method', 'approach', 'design', 'experiment', 'data']),
+            'has_results': any(word in script_text for word in ['results', 'findings', 'found', 'shows', 'demonstrated']),
+            'has_numbers': bool(re.search(r'\d+\.?\d*\s*%|\d+\.?\d*\s*(percent|patients|samples)', script_text)),
+            'has_limitations': any(word in script_text for word in ['limitation', 'caveat', 'however', 'challenge', 'constraint']),
+            'has_implications': any(word in script_text for word in ['implication', 'application', 'future', 'means', 'impact'])
+        }
+
+        missing = [k for k, v in checks.items() if not v]
+        if missing:
+            logger.warning(f"Research script missing sections: {missing}")
+
+        return checks
 
 
 if __name__ == "__main__":
